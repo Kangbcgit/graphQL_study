@@ -7,7 +7,9 @@ const typeDefs = gql`
     firstName: String!
     lastName: String!
     fullName: String
+    userTweets: [Tweet]!
   }
+  """트윗의 구성요소와 id, 작성자를"""
   type Tweet {
     id: ID!
     text: String!
@@ -19,10 +21,11 @@ const typeDefs = gql`
     getTweet(id: ID!): Tweet
     allTweets: [Tweet!]!
     tweet(id: ID): Tweet
+    user(id: ID!): User
     allUsers: [User]!
   }
   type Mutation {
-    postTweet(text: String! userId: ID): Tweet!
+    postTweet(text: String! userId: ID!): Tweet!
     deleteTweet(id: ID!): Boolean!
   }
 `;
@@ -61,6 +64,9 @@ const resolvers = {
     allTweets() {
       return Tweets;
     },
+    user(root, args) {
+      return Users.find(user => user.id === args.id);
+    },
     allUsers() {
       return Users;
     }
@@ -92,11 +98,16 @@ const resolvers = {
     fullName(root) {
       console.log(root);
       return `${root.firstName} ${root.lastName}`;
+    },
+    userTweets(root) {
+      //하나의 트윗은 한 명의 게시자가 작성하지만, 한 명의 게시자는 여러개의 트윗을 쓸 수 있다. 즉 filter를 사용하는게 좋아보임.
+      let userTweets = Tweets.filter(tweet => tweet.userId === root.id);
+      return userTweets;
     }
   },
   Tweet: {
     author(root) {
-      return Users.find(user => user.id === root.userId);
+      return Users.find(user => user.id === root.userId); //성능이 안좋아보임.
     }
   }
 }
